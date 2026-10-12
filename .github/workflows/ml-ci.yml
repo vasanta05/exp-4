@@ -1,0 +1,48 @@
+
+name: Student Placement ML Artifacts
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  train-test-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Train student placement model
+        run: python train_model.py
+
+      - name: Check ML quality gate
+        run: python quality_gate.py
+
+      - name: Run automated ML tests
+        run: python -m unittest discover -v
+
+      - name: Upload validated ML artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-placement-ml-artifacts
+          path: |
+            artifacts/placement_model.joblib
+            artifacts/metrics.json
+            artifacts/student_data.csv
+          if-no-files-found: error
+          retention-days: 7
